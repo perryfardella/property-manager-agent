@@ -433,7 +433,7 @@ export default function Home() {
             </h2>
             <p className="text-xl opacity-90">
               Join hundreds of property managers who save hours daily and
-              thousands monthly with Host Agent's AI-powered WhatsApp
+              thousands monthly with Host Agent&apos;s AI-powered WhatsApp
               automation.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -450,7 +450,7 @@ export default function Home() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="text-lg px-8 py-6 border-white text-white hover:bg-white hover:text-blue-600"
+                  className="text-lg px-8 py-6 text-blue-600"
                 >
                   Calculate Your ROI
                 </Button>
