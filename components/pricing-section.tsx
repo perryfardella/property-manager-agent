@@ -139,7 +139,7 @@ export default function PricingSection({
                 {properties > 1
                   ? `For ${properties} properties: $39 base + ${
                       properties - 1
-                    } x $29`
+                    } additional properties x $29`
                   : "+ $29/month per additional property (first is included!)"}
               </div>
               {/* Savings Display */}
