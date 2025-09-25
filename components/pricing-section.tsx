@@ -75,6 +75,9 @@ export default function PricingSection() {
                 <span className="text-4xl font-bold">$39</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
+              <div className="text-sm text-muted-foreground mt-1">
+                + $29/month per additional property (first is included!)
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <ul className="space-y-2 text-sm">
@@ -109,8 +112,7 @@ export default function PricingSection() {
               <CardTitle className="text-2xl">Professional</CardTitle>
               <CardDescription>For large property portfolios</CardDescription>
               <div className="pt-4">
-                <span className="text-4xl font-bold">$79</span>
-                <span className="text-muted-foreground">/property/month</span>
+                <span className="text-4xl font-bold">Custom pricing</span>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
