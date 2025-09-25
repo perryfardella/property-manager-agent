@@ -49,12 +49,12 @@ export default function Home() {
 
             <div className="pt-8">
               <p className="text-sm text-muted-foreground mb-4">
-                Trusted by property managers across the globe
+                Trusted by property managers across the globe using
               </p>
               <div className="flex items-center justify-center space-x-8 opacity-60">
                 <div className="text-2xl font-bold">Airbnb</div>
-                <div className="text-2xl font-bold">VRBO</div>
                 <div className="text-2xl font-bold">Booking.com</div>
+                <div className="text-2xl font-bold">VRBO</div>
               </div>
             </div>
           </div>
