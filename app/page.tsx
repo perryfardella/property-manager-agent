@@ -37,7 +37,7 @@ export default function Home() {
                   Start Free Trial
                 </Button>
               </Link>
-              <Link href="#calculator">
+              <a href="#calculator">
                 <Button
                   variant="outline"
                   size="lg"
@@ -45,7 +45,7 @@ export default function Home() {
                 >
                   Calculate Your Savings
                 </Button>
-              </Link>
+              </a>
             </div>
 
             <div className="pt-8">
@@ -446,7 +446,7 @@ export default function Home() {
                   Start Your Free Trial
                 </Button>
               </Link>
-              <Link href="#calculator">
+              <a href="#calculator">
                 <Button
                   size="lg"
                   variant="outline"
@@ -454,7 +454,7 @@ export default function Home() {
                 >
                   Calculate Your ROI
                 </Button>
-              </Link>
+              </a>
             </div>
             <p className="text-sm opacity-75">
               14-day free trial • No credit card required • Cancel anytime
