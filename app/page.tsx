@@ -25,9 +25,8 @@ export default function Home() {
                 per property monthly with AI
               </h1>
               <p className="text-xl lg:text-2xl text-muted-foreground max-w-3xl mx-auto">
-                Replace expensive property managers and automate WhatsApp guest
-                messaging for short-term rentals. Reclaim 10-15 hours per
-                property each month.
+                Replace expensive property managers or reclaim your own time and
+                automate WhatsApp guest messaging for short-term rentals.
               </p>
             </div>
 

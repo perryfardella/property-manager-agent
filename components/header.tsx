@@ -98,8 +98,15 @@ export function Header() {
             // Show loading state
             <div className="w-20 h-8 bg-muted animate-pulse rounded"></div>
           ) : user ? (
-            // Show logout button when authenticated
-            <LogoutButton />
+            // Show dashboard and logout buttons when authenticated
+            <>
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm">
+                  Dashboard
+                </Button>
+              </Link>
+              <LogoutButton />
+            </>
           ) : (
             // Show sign in/get started buttons when not authenticated
             <>
