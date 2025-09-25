@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import "./globals.css";
@@ -30,6 +31,29 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
+        {/* Facebook SDK */}
+        <Script
+          id="facebook-init"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.fbAsyncInit = function() {
+                FB.init({
+                  appId            : '1987551288664924',
+                  autoLogAppEvents : true,
+                  xfbml            : true,
+                  version          : 'v23.0'
+                });
+              };
+            `,
+          }}
+        />
+        <Script
+          src="https://connect.facebook.net/en_US/sdk.js"
+          strategy="afterInteractive"
+          crossOrigin="anonymous"
+        />
+
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
