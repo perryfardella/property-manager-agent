@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Card,
   CardContent,
@@ -14,28 +14,38 @@ import { Label } from "@/components/ui/label";
 // Simple ROI Calculator - Time = Money
 // Focus on time savings that translate to monetary value
 
-export default function HostAgentRoiCalculator() {
-  // --- Simple Inputs ---
-  const [properties, setProperties] = useState(3);
-  const [hoursPerWeek, setHoursPerWeek] = useState(8); // hours spent managing per property per week
-  const [hourlyRate, setHourlyRate] = useState(35); // $/hour (either what you pay a manager or your own time value)
+interface HostAgentRoiCalculatorProps {
+  properties: number;
+  setProperties: (value: number) => void;
+  hoursPerMonth: number;
+  setHoursPerMonth: (value: number) => void;
+  hourlyRate: number;
+  setHourlyRate: (value: number) => void;
+}
 
+export default function HostAgentRoiCalculator({
+  properties,
+  setProperties,
+  hoursPerMonth,
+  setHoursPerMonth,
+  hourlyRate,
+  setHourlyRate,
+}: HostAgentRoiCalculatorProps) {
   // --- Helpers ---
   const fmt = (n: number) =>
     `$${n.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 
   // --- Calculations ---
   // AI handles 80% of queries (from PRD: "automate 80%+ of routine guest queries")
-  const timeSavedPerProperty = hoursPerWeek * 0.8; // 80% automation
+  const timeSavedPerProperty = hoursPerMonth * 0.8; // 80% automation
   const totalTimeSaved = timeSavedPerProperty * properties;
 
-  // Monthly calculations (4.33 weeks per month)
-  const weeksPerMonth = 4.33;
-  const monthlyTimeSaved = totalTimeSaved * weeksPerMonth;
+  // Monthly calculations (direct, no conversion needed)
+  const monthlyTimeSaved = totalTimeSaved;
   const monthlyValueSaved = monthlyTimeSaved * hourlyRate;
 
   // Per property breakdown
-  const monthlyTimePerProperty = timeSavedPerProperty * weeksPerMonth;
+  const monthlyTimePerProperty = timeSavedPerProperty;
   const monthlyValuePerProperty = monthlyTimePerProperty * hourlyRate;
 
   return (
@@ -63,19 +73,19 @@ export default function HostAgentRoiCalculator() {
             <Slider
               label={`Properties: ${properties}`}
               min={1}
-              max={50}
+              max={20}
               step={1}
               value={properties}
               onChange={setProperties}
             />
 
             <Slider
-              label={`Hours per property per week: ${hoursPerWeek}`}
+              label={`Hours spent managing each property each month: ${hoursPerMonth}`}
               min={1}
-              max={40}
+              max={100}
               step={1}
-              value={hoursPerWeek}
-              onChange={setHoursPerWeek}
+              value={hoursPerMonth}
+              onChange={setHoursPerMonth}
             />
 
             <Slider
@@ -105,7 +115,7 @@ export default function HostAgentRoiCalculator() {
                   {Math.round(monthlyTimeSaved)} hours
                 </div>
                 <div className="text-sm text-green-600 dark:text-green-400">
-                  saved per month
+                  saved per month (80% of management time)
                 </div>
               </div>
 
