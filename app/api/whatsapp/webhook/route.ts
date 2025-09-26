@@ -24,6 +24,7 @@ interface WhatsAppWebhookMessage {
         name?: string;
         address?: string;
     };
+    //eslint-disable-next-line @typescript-eslint/no-explicit-any
     contacts?: Array<any>;
     // Add more message types as needed
 }
@@ -190,6 +191,7 @@ async function processInboundMessage(
 ) {
     try {
         // Parse message content based on type
+        //eslint-disable-next-line @typescript-eslint/no-explicit-any
         let messageContent: any = {};
 
         switch (message.type) {

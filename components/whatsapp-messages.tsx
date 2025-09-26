@@ -11,6 +11,7 @@ interface WhatsAppMessage {
   from_phone_number: string;
   to_phone_number: string;
   message_type: string;
+  //eslint-disable-next-line @typescript-eslint/no-explicit-any
   message_content: any;
   message_status: string;
   timestamp_sent: string | null;
