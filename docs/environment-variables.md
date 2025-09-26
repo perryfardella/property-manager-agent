@@ -21,9 +21,12 @@ FACEBOOK_APP_SECRET=your_facebook_app_secret
 # Frontend configuration (must be prefixed with NEXT_PUBLIC_)
 NEXT_PUBLIC_FACEBOOK_APP_ID=your_facebook_app_id
 NEXT_PUBLIC_WHATSAPP_CONFIG_ID=your_whatsapp_embedded_signup_config_id
+
+# Webhook configuration
+WHATSAPP_WEBHOOK_VERIFY_TOKEN=your_webhook_verify_token
 ```
 
-> **Note**: The `NEXT_PUBLIC_FACEBOOK_APP_ID` should be the same value as `FACEBOOK_APP_ID`. The `NEXT_PUBLIC_WHATSAPP_CONFIG_ID` is obtained from your Facebook App's WhatsApp Business API embedded signup configuration.
+> **Note**: The `NEXT_PUBLIC_FACEBOOK_APP_ID` should be the same value as `FACEBOOK_APP_ID`. The `NEXT_PUBLIC_WHATSAPP_CONFIG_ID` is obtained from your Facebook App's WhatsApp Business API embedded signup configuration. The `WHATSAPP_WEBHOOK_VERIFY_TOKEN` should be a secure random string that you'll use when configuring the webhook in Meta Developer Console.
 
 ### Access Token Encryption (REQUIRED FOR SECURITY)
 
