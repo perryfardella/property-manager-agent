@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 // WhatsApp webhook payload types
 interface WhatsAppWebhookMessage {
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ status: "ignored" }, { status: 200 });
         }
 
-        const supabase = await createClient();
+        const supabase = createServiceClient();
 
         // Process each entry in the webhook
         for (const entry of payload.entry) {
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
 
 async function processMessagesChange(
     change: WhatsAppWebhookChange,
-    supabase: Awaited<ReturnType<typeof createClient>>,
+    supabase: ReturnType<typeof createServiceClient>,
     fullPayload: WhatsAppWebhookPayload,
 ) {
     const { value } = change;
@@ -186,7 +186,7 @@ async function processInboundMessage(
         phone_number: string | null;
     },
     businessPhoneNumber: string,
-    supabase: Awaited<ReturnType<typeof createClient>>,
+    supabase: ReturnType<typeof createServiceClient>,
     fullPayload: WhatsAppWebhookPayload,
 ) {
     try {
@@ -286,7 +286,7 @@ async function processMessageStatus(
         user_id: string;
         phone_number: string | null;
     },
-    supabase: Awaited<ReturnType<typeof createClient>>,
+    supabase: ReturnType<typeof createServiceClient>,
 ) {
     try {
         // Update message status in database

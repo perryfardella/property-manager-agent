@@ -9,7 +9,10 @@ This document outlines the required environment variables for the WhatsApp Busin
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 ```
+
+> **Important**: The `SUPABASE_SERVICE_ROLE_KEY` is required for webhook operations and has full database access. Keep it secure and never expose it to the client-side!
 
 ### Facebook/Meta WhatsApp Business API
 
