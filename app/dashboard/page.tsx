@@ -19,10 +19,10 @@ export default async function ProtectedPage() {
     .single();
 
   return (
-    <div className="flex h-svh w-full flex-col">
+    <div className="flex h-svh w-full flex-col justify-self-center container">
       {/* WhatsApp Connection Banner */}
       <div
-        className="w-full px-4 py-3 text-white"
+        className="px-4 mx-4 py-2 mt-2 text-white rounded-lg w-auto"
         style={{ backgroundColor: whatsappAccount ? "#22c55e" : "#25D366" }}
       >
         <div className="flex items-center justify-between">
