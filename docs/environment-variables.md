@@ -14,9 +14,16 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_OR_ANON_KEY=your_supabase_anon_key
 ### Facebook/Meta WhatsApp Business API
 
 ```bash
+# Backend API credentials
 FACEBOOK_APP_ID=your_facebook_app_id
 FACEBOOK_APP_SECRET=your_facebook_app_secret
+
+# Frontend configuration (must be prefixed with NEXT_PUBLIC_)
+NEXT_PUBLIC_FACEBOOK_APP_ID=your_facebook_app_id
+NEXT_PUBLIC_WHATSAPP_CONFIG_ID=your_whatsapp_embedded_signup_config_id
 ```
+
+> **Note**: The `NEXT_PUBLIC_FACEBOOK_APP_ID` should be the same value as `FACEBOOK_APP_ID`. The `NEXT_PUBLIC_WHATSAPP_CONFIG_ID` is obtained from your Facebook App's WhatsApp Business API embedded signup configuration.
 
 ### Access Token Encryption (REQUIRED FOR SECURITY)
 
