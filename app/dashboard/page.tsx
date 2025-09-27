@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { WhatsAppSignup } from "@/components/whatsapp-signup";
 import { WhatsAppMessages } from "@/components/whatsapp-messages";
+import { PropertyManagement } from "@/components/property-management";
 
 export default async function ProtectedPage() {
   const supabase = await createClient();
@@ -84,23 +85,14 @@ export default async function ProtectedPage() {
 
       {/* Main Dashboard Content */}
       <div className="flex-1 p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Messages Panel */}
-            <WhatsAppMessages className="h-fit" />
+        <div className="max-w-7xl mx-auto">
+          <div className="space-y-8">
+            {/* Property Management Section */}
+            <PropertyManagement />
 
-            {/* Future panels can go here */}
-            <div className="space-y-6">
-              {/* Placeholder for future dashboard components */}
-              <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                <div className="text-gray-400 text-2xl mb-2">🚀</div>
-                <p className="text-gray-600 font-medium">
-                  More Features Coming Soon
-                </p>
-                <p className="text-sm text-gray-500 mt-1">
-                  AI responses, property management, and more
-                </p>
-              </div>
+            {/* Messages Panel */}
+            <div className="mt-8">
+              <WhatsAppMessages className="h-fit" />
             </div>
           </div>
         </div>
