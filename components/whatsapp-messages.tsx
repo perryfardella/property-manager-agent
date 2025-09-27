@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface WhatsAppMessage {
   id: number;
+  whatsapp_account_id: number;
   whatsapp_message_id: string;
   direction: "inbound" | "outbound";
   from_phone_number: string;
@@ -29,32 +30,7 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
 
   const supabase = createClient();
 
-  useEffect(() => {
-    fetchMessages();
-
-    // Set up real-time subscription for new messages
-    const channel = supabase
-      .channel("whatsapp_messages")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "whatsapp_messages",
-        },
-        (payload) => {
-          console.log("New message received:", payload);
-          setMessages((prev) => [payload.new as WhatsAppMessage, ...prev]);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -93,7 +69,90 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [supabase]);
+
+  useEffect(() => {
+    fetchMessages();
+
+    // Set up real-time subscription for new messages
+    const setupRealtimeSubscription = async () => {
+      // Get current user for filtering
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const channel = supabase
+        .channel("whatsapp_messages_channel")
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "whatsapp_messages",
+          },
+          async (payload) => {
+            console.log("Real-time message received:", payload);
+
+            // Verify this message belongs to the current user before adding to state
+            const newMessage = payload.new as WhatsAppMessage;
+
+            // Get the whatsapp account to verify it belongs to current user
+            const { data: account } = await supabase
+              .from("whatsapp_accounts")
+              .select("user_id")
+              .eq("id", newMessage.whatsapp_account_id)
+              .single();
+
+            if (account?.user_id === user.id) {
+              setMessages((prev) => [newMessage, ...prev]);
+              console.log("Message added to UI");
+            } else {
+              console.log("Message filtered out - not for current user");
+            }
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "whatsapp_messages",
+          },
+          async (payload) => {
+            console.log("Message status updated:", payload);
+            const updatedMessage = payload.new as WhatsAppMessage;
+
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === updatedMessage.id ? updatedMessage : msg
+              )
+            );
+          }
+        )
+        .subscribe((status) => {
+          console.log("Real-time subscription status:", status);
+        });
+
+      return channel;
+    };
+
+    let cleanupFunction: (() => void) | undefined;
+
+    setupRealtimeSubscription().then((channel) => {
+      if (channel) {
+        cleanupFunction = () => {
+          supabase.removeChannel(channel);
+        };
+      }
+    });
+
+    return () => {
+      if (cleanupFunction) {
+        cleanupFunction();
+      }
+    };
+  }, [supabase, fetchMessages]);
 
   const formatPhoneNumber = (phoneNumber: string): string => {
     // Format phone number for display (remove country code prefix if needed)
@@ -207,13 +266,21 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
   return (
     <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>WhatsApp Messages</CardTitle>
-        <button
-          onClick={fetchMessages}
-          className="text-sm text-gray-600 hover:text-gray-800"
-        >
-          🔄 Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <CardTitle>WhatsApp Messages</CardTitle>
+          <div className="flex items-center gap-1">
+            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-xs text-gray-500">Updating live</span>
+          </div>
+        </div>
+        {error && (
+          <button
+            onClick={fetchMessages}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            🔄 Retry
+          </button>
+        )}
       </CardHeader>
       <CardContent>
         {messages.length === 0 ? (
