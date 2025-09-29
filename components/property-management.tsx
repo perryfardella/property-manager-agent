@@ -5,8 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PropertyForm } from "./property-form";
-import { PropertyDetails } from "./property-details";
+import { PropertyFormDialog } from "./property-form-dialog";
+import { PropertyDetailsDialog } from "./property-details-dialog";
 import { Plus, Home, MapPin } from "lucide-react";
 
 interface Property {
@@ -42,7 +42,8 @@ interface Property {
 export function PropertyManagement() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
+  const [showFormDialog, setShowFormDialog] = useState(false);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(
     null
@@ -73,24 +74,25 @@ export function PropertyManagement() {
 
   const handleCreateProperty = () => {
     setEditingProperty(null);
-    setSelectedProperty(null);
-    setShowForm(true);
+    setShowFormDialog(true);
   };
 
   const handleEditProperty = (property: Property) => {
     setEditingProperty(property);
-    setSelectedProperty(null);
-    setShowForm(true);
+    setShowDetailsDialog(false);
+    setShowFormDialog(true);
   };
 
   const handleViewProperty = (property: Property) => {
     setSelectedProperty(property);
-    setShowForm(false);
+    setShowDetailsDialog(true);
   };
 
   const handleFormSuccess = () => {
-    setShowForm(false);
+    setShowFormDialog(false);
+    setShowDetailsDialog(false);
     setEditingProperty(null);
+    setSelectedProperty(null);
     fetchProperties();
   };
 
@@ -105,34 +107,12 @@ export function PropertyManagement() {
 
       if (error) throw error;
       fetchProperties();
-      if (selectedProperty?.id === propertyId) {
-        setSelectedProperty(null);
-      }
+      setShowDetailsDialog(false);
+      setSelectedProperty(null);
     } catch (error) {
       console.error("Error deleting property:", error);
     }
   };
-
-  if (showForm) {
-    return (
-      <PropertyForm
-        property={editingProperty}
-        onSuccess={handleFormSuccess}
-        onCancel={() => setShowForm(false)}
-      />
-    );
-  }
-
-  if (selectedProperty) {
-    return (
-      <PropertyDetails
-        property={selectedProperty}
-        onEdit={() => handleEditProperty(selectedProperty)}
-        onDelete={() => handleDeleteProperty(selectedProperty.id)}
-        onBack={() => setSelectedProperty(null)}
-      />
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -223,6 +203,23 @@ export function PropertyManagement() {
           ))}
         </div>
       )}
+
+      {/* Property Form Dialog */}
+      <PropertyFormDialog
+        property={editingProperty}
+        open={showFormDialog}
+        onOpenChange={setShowFormDialog}
+        onSuccess={handleFormSuccess}
+      />
+
+      {/* Property Details Dialog */}
+      <PropertyDetailsDialog
+        property={selectedProperty}
+        open={showDetailsDialog}
+        onOpenChange={setShowDetailsDialog}
+        onEdit={handleEditProperty}
+        onDelete={handleDeleteProperty}
+      />
     </div>
   );
 }
