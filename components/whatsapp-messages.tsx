@@ -12,7 +12,7 @@ interface WhatsAppMessage {
   from_phone_number: string;
   to_phone_number: string;
   message_type: string;
-  //eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   message_content: any;
   message_status: string;
   timestamp_sent: string | null;
@@ -76,7 +76,6 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
 
     // Set up real-time subscription for new messages
     const setupRealtimeSubscription = async () => {
-      // Get current user for filtering
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -91,25 +90,10 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
             schema: "public",
             table: "whatsapp_messages",
           },
-          async (payload) => {
+          (payload) => {
             console.log("Real-time message received:", payload);
-
-            // Verify this message belongs to the current user before adding to state
             const newMessage = payload.new as WhatsAppMessage;
-
-            // Get the whatsapp account to verify it belongs to current user
-            const { data: account } = await supabase
-              .from("whatsapp_accounts")
-              .select("user_id")
-              .eq("id", newMessage.whatsapp_account_id)
-              .single();
-
-            if (account?.user_id === user.id) {
-              setMessages((prev) => [newMessage, ...prev]);
-              console.log("Message added to UI");
-            } else {
-              console.log("Message filtered out - not for current user");
-            }
+            setMessages((prev) => [newMessage, ...prev]);
           }
         )
         .on(
@@ -119,7 +103,7 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
             schema: "public",
             table: "whatsapp_messages",
           },
-          async (payload) => {
+          (payload) => {
             console.log("Message status updated:", payload);
             const updatedMessage = payload.new as WhatsAppMessage;
 
@@ -155,7 +139,6 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
   }, [supabase, fetchMessages]);
 
   const formatPhoneNumber = (phoneNumber: string): string => {
-    // Format phone number for display (remove country code prefix if needed)
     if (phoneNumber.length > 10) {
       return `+${phoneNumber}`;
     }
