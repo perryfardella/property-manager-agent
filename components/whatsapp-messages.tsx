@@ -23,15 +23,10 @@ interface WhatsAppMessagesProps {
   className?: string;
 }
 
-type RealtimeStatus = "connecting" | "connected" | "error" | "disconnected";
-
 export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
   const [messages, setMessages] = useState<WhatsAppMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [realtimeStatus, setRealtimeStatus] =
-    useState<RealtimeStatus>("connecting");
-  const [realtimeError, setRealtimeError] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -76,18 +71,11 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
     }
   }, [supabase]);
 
-  const handleManualRefresh = () => {
-    setRealtimeError(null);
-    setRealtimeStatus("connecting");
-    fetchMessages();
-  };
-
   useEffect(() => {
     fetchMessages();
 
     // Set up real-time subscription for new messages
     const setupRealtimeSubscription = async () => {
-      setRealtimeStatus("connecting");
       // Get current user for filtering
       const {
         data: { user },
@@ -103,13 +91,25 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
             schema: "public",
             table: "whatsapp_messages",
           },
-          (payload) => {
+          async (payload) => {
             console.log("Real-time message received:", payload);
+
+            // Verify this message belongs to the current user before adding to state
             const newMessage = payload.new as WhatsAppMessage;
 
-            // RLS policies will ensure only user's messages come through
-            setMessages((prev) => [newMessage, ...prev]);
-            console.log("Message added to UI");
+            // Get the whatsapp account to verify it belongs to current user
+            const { data: account } = await supabase
+              .from("whatsapp_accounts")
+              .select("user_id")
+              .eq("id", newMessage.whatsapp_account_id)
+              .single();
+
+            if (account?.user_id === user.id) {
+              setMessages((prev) => [newMessage, ...prev]);
+              console.log("Message added to UI");
+            } else {
+              console.log("Message filtered out - not for current user");
+            }
           }
         )
         .on(
@@ -119,7 +119,7 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
             schema: "public",
             table: "whatsapp_messages",
           },
-          (payload) => {
+          async (payload) => {
             console.log("Message status updated:", payload);
             const updatedMessage = payload.new as WhatsAppMessage;
 
@@ -128,32 +128,10 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
                 msg.id === updatedMessage.id ? updatedMessage : msg
               )
             );
-            console.log("Message status updated in UI");
           }
         )
         .subscribe((status) => {
           console.log("Real-time subscription status:", status);
-          if (status === "SUBSCRIBED") {
-            console.log("Successfully subscribed to realtime messages");
-            setRealtimeStatus("connected");
-            setRealtimeError(null);
-          } else if (status === "CHANNEL_ERROR") {
-            console.error("Channel error in realtime subscription");
-            setRealtimeStatus("error");
-            setRealtimeError(
-              "Realtime connection failed - messages may not update automatically"
-            );
-          } else if (status === "TIMED_OUT") {
-            console.error("Realtime subscription timed out");
-            setRealtimeStatus("error");
-            setRealtimeError(
-              "Realtime connection timed out - messages may not update automatically"
-            );
-          } else if (status === "CLOSED") {
-            console.log("Realtime subscription closed");
-            setRealtimeStatus("disconnected");
-            setRealtimeError("Realtime connection closed");
-          }
         });
 
       return channel;
@@ -285,62 +263,23 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
     );
   }
 
-  const getStatusIndicator = () => {
-    switch (realtimeStatus) {
-      case "connected":
-        return (
-          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            <span>Live updates</span>
-          </div>
-        );
-      case "connecting":
-        return (
-          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-            <div className="w-2 h-2 bg-yellow-500 rounded-full animate-spin" />
-            <span>Connecting...</span>
-          </div>
-        );
-      case "error":
-      case "disconnected":
-        return (
-          <div className="flex items-center space-x-2 text-sm">
-            <div className="w-2 h-2 bg-red-500 rounded-full" />
-            <span className="text-red-600">Connection error</span>
-            <button
-              onClick={handleManualRefresh}
-              className="text-blue-600 hover:text-blue-800 underline text-xs"
-            >
-              Refresh
-            </button>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
   return (
     <Card className={className}>
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>WhatsApp Messages</span>
-          {getStatusIndicator()}
-        </CardTitle>
-        {realtimeError && (
-          <div className="text-sm text-red-600 bg-red-50 p-2 rounded border border-red-200">
-            {realtimeError}
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div className="flex items-center gap-2">
+          <CardTitle>WhatsApp Messages</CardTitle>
+          <div className="flex items-center gap-1">
+            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-xs text-gray-500">Updating live</span>
           </div>
-        )}
+        </div>
         {error && (
-          <div className="flex justify-end mt-2">
-            <button
-              onClick={fetchMessages}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
-            >
-              🔄 Retry
-            </button>
-          </div>
+          <button
+            onClick={fetchMessages}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            🔄 Retry
+          </button>
         )}
       </CardHeader>
       <CardContent>
