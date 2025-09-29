@@ -42,10 +42,12 @@ export default async function ProtectedPage() {
             <div>
               {whatsappAccount ? (
                 <>
-                  <p className="font-medium">WhatsApp Business Connected</p>
+                  <p className="font-medium">
+                    WhatsApp Business Account Connected
+                  </p>
                   <p className="text-sm opacity-90">
                     {whatsappAccount.verified_name || whatsappAccount.waba_name}{" "}
-                    • {whatsappAccount.phone_number}
+                    +{whatsappAccount.phone_number}
                   </p>
                 </>
               ) : (
