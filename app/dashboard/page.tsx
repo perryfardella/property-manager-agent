@@ -21,7 +21,7 @@ export default async function ProtectedPage() {
     .single();
 
   return (
-    <div className="flex h-svh w-full flex-col justify-self-center container">
+    <div className="flex h-full w-full flex-col justify-self-center container">
       {/* WhatsApp Connection Banner */}
       <div
         className="px-4 mx-4 py-2 mt-2 text-white rounded-lg w-auto"
