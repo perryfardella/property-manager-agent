@@ -77,28 +77,38 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
 
       const channel = supabase
         .channel("whatsapp_messages_channel")
-        .on("broadcast", { event: "*" }, (payload) => {
-          try {
-            const parsed =
-              typeof payload.payload === "string"
-                ? JSON.parse(payload.payload)
-                : payload.payload;
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "whatsapp_messages",
+          },
+          (payload) => {
+            const newMessage = payload.new as WhatsAppMessage;
 
-            if (parsed.user_id === user.id) {
-              if (parsed.event === "INSERT") {
-                setMessages((prev) => [parsed.data, ...prev]);
-              } else if (parsed.event === "UPDATE") {
-                setMessages((prev) =>
-                  prev.map((msg) =>
-                    msg.id === parsed.data.id ? parsed.data : msg
-                  )
-                );
-              }
-            }
-          } catch (err) {
-            console.error("Failed to parse realtime payload", err, payload);
+            // RLS already ensures only this user's messages arrive
+            setMessages((prev) => [newMessage, ...prev]);
+            console.log("Realtime message received:", newMessage);
           }
-        })
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "whatsapp_messages",
+          },
+          (payload) => {
+            const updatedMessage = payload.new as WhatsAppMessage;
+
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === updatedMessage.id ? updatedMessage : msg
+              )
+            );
+          }
+        )
         .subscribe((status) =>
           console.log("Realtime subscription status:", status)
         );
@@ -109,7 +119,9 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
     let cleanup: (() => void) | undefined;
 
     setupRealtimeSubscription().then((channel) => {
-      if (channel) cleanup = () => supabase.removeChannel(channel);
+      if (channel) {
+        cleanup = () => supabase.removeChannel(channel);
+      }
     });
 
     return () => {
