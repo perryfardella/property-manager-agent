@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
@@ -67,6 +67,10 @@ export function WhatsAppSignup({
     waba_id?: string;
     phone_number_id?: string;
   } | null>(null);
+  const whatsappDataRef = useRef<{
+    waba_id?: string;
+    phone_number_id?: string;
+  } | null>(null);
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,16 +93,24 @@ export function WhatsAppSignup({
 
     // Set up message event listener for session info from embedded signup
     const handleMessage = (event: MessageEvent) => {
+      console.log("Message event received:", {
+        origin: event.origin,
+        data: event.data,
+        type: typeof event.data,
+      });
+
       // Only accept messages from Facebook domains
       if (
         event.origin !== "https://www.facebook.com" &&
         event.origin !== "https://web.facebook.com"
       ) {
+        console.log("Message from non-Facebook origin, ignoring");
         return;
       }
 
       try {
         const data = JSON.parse(event.data) as SessionInfoData;
+        console.log("Parsed message data:", data);
 
         if (data.type === "WA_EMBEDDED_SIGNUP") {
           setSessionInfo(data);
@@ -110,7 +122,13 @@ export function WhatsAppSignup({
               waba_id,
             });
             // Store the WhatsApp data for later use in token exchange
-            setWhatsappData({ waba_id, phone_number_id });
+            const dataToStore = { waba_id, phone_number_id };
+            setWhatsappData(dataToStore);
+            whatsappDataRef.current = dataToStore;
+            console.log(
+              "WhatsApp data stored in ref:",
+              whatsappDataRef.current
+            );
           } else if (data.event === "CANCEL") {
             const { current_step } = data.data;
             console.warn(
@@ -184,20 +202,36 @@ export function WhatsAppSignup({
         throw new Error("User not authenticated");
       }
 
-      // Wait a bit for WhatsApp data to be available if not already set
-      let finalWabaId = whatsappData?.waba_id || sessionInfo?.data?.waba_id;
+      // Get WhatsApp data from ref (immediate) or state (fallback)
+      let finalWabaId =
+        whatsappDataRef.current?.waba_id ||
+        whatsappData?.waba_id ||
+        sessionInfo?.data?.waba_id;
       let finalPhoneNumberId =
-        whatsappData?.phone_number_id || sessionInfo?.data?.phone_number_id;
+        whatsappDataRef.current?.phone_number_id ||
+        whatsappData?.phone_number_id ||
+        sessionInfo?.data?.phone_number_id;
 
-      // If we don't have the WhatsApp data yet, wait a bit and check again
+      console.log("WhatsApp data sources:", {
+        ref: whatsappDataRef.current,
+        state: whatsappData,
+        sessionInfo: sessionInfo?.data,
+      });
+
+      // If we still don't have the WhatsApp data, wait a bit and check again
       if (!finalWabaId || !finalPhoneNumberId) {
         console.log("WhatsApp data not immediately available, waiting...");
         await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Check again after waiting
-        finalWabaId = whatsappData?.waba_id || sessionInfo?.data?.waba_id;
+        finalWabaId =
+          whatsappDataRef.current?.waba_id ||
+          whatsappData?.waba_id ||
+          sessionInfo?.data?.waba_id;
         finalPhoneNumberId =
-          whatsappData?.phone_number_id || sessionInfo?.data?.phone_number_id;
+          whatsappDataRef.current?.phone_number_id ||
+          whatsappData?.phone_number_id ||
+          sessionInfo?.data?.phone_number_id;
       }
 
       // Prepare the data to send
