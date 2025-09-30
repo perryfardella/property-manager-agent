@@ -63,6 +63,10 @@ export function WhatsAppSignup({
   className,
 }: WhatsAppSignupProps) {
   const [sessionInfo, setSessionInfo] = useState<SessionInfoData | null>(null);
+  const [whatsappData, setWhatsappData] = useState<{
+    waba_id?: string;
+    phone_number_id?: string;
+  } | null>(null);
   const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -105,6 +109,8 @@ export function WhatsAppSignup({
               phone_number_id,
               waba_id,
             });
+            // Store the WhatsApp data for later use in token exchange
+            setWhatsappData({ waba_id, phone_number_id });
           } else if (data.event === "CANCEL") {
             const { current_step } = data.data;
             console.warn(
@@ -178,17 +184,40 @@ export function WhatsAppSignup({
         throw new Error("User not authenticated");
       }
 
+      // Wait a bit for WhatsApp data to be available if not already set
+      let finalWabaId = whatsappData?.waba_id || sessionInfo?.data?.waba_id;
+      let finalPhoneNumberId =
+        whatsappData?.phone_number_id || sessionInfo?.data?.phone_number_id;
+
+      // If we don't have the WhatsApp data yet, wait a bit and check again
+      if (!finalWabaId || !finalPhoneNumberId) {
+        console.log("WhatsApp data not immediately available, waiting...");
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Check again after waiting
+        finalWabaId = whatsappData?.waba_id || sessionInfo?.data?.waba_id;
+        finalPhoneNumberId =
+          whatsappData?.phone_number_id || sessionInfo?.data?.phone_number_id;
+      }
+
+      // Prepare the data to send
+      const requestData = {
+        code,
+        wabaId: finalWabaId,
+        phoneNumberId: finalPhoneNumberId,
+      };
+
+      console.log("Sending token exchange request with data:", requestData);
+      console.log("WhatsApp data state:", whatsappData);
+      console.log("Session info state:", sessionInfo);
+
       // Send the authorization code to backend for token exchange
       const tokenExchangeResponse = await fetch(
         "/api/whatsapp/exchange-token",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            code,
-            wabaId: sessionInfo?.data?.waba_id,
-            phoneNumberId: sessionInfo?.data?.phone_number_id,
-          }),
+          body: JSON.stringify(requestData),
         }
       );
 
