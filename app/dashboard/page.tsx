@@ -47,7 +47,7 @@ export default async function ProtectedPage() {
                   </p>
                   <p className="text-sm opacity-90">
                     {whatsappAccount.verified_name || whatsappAccount.waba_name}{" "}
-                    +{whatsappAccount.phone_number}
+                    {whatsappAccount.phone_number}
                   </p>
                 </>
               ) : (

@@ -46,13 +46,6 @@ export async function POST(request: NextRequest) {
         const { code, wabaId, phoneNumberId }: TokenExchangeRequest =
             await request.json();
 
-        console.log("Token exchange request received:", {
-            code: code ? "present" : "missing",
-            wabaId,
-            phoneNumberId,
-            userId: user.id,
-        });
-
         if (!code) {
             return NextResponse.json(
                 { error: "Authorization code is required" },
@@ -87,14 +80,6 @@ export async function POST(request: NextRequest) {
             : null;
 
         // Step 4: Store the token and details in your database
-        console.log("About to store WhatsApp data:", {
-            wabaId,
-            phoneNumberId,
-            wabaDetails,
-            phoneDetails,
-            hasAccessToken: !!tokenResponse.access_token,
-        });
-
         await storeWhatsAppData(
             {
                 accessToken: tokenResponse.access_token,
@@ -264,14 +249,7 @@ async function storeWhatsAppData(
             throw new Error("Failed to store WhatsApp account data");
         }
 
-        console.log("Successfully stored WhatsApp account:", {
-            id: insertedData.id,
-            wabaId: data.wabaId,
-            phoneNumberId: data.phoneNumberId,
-            userId,
-            // Don't log the access token for security
-            hasAccessToken: !!data.accessToken,
-        });
+        // Successfully stored WhatsApp account data
 
         return { success: true, accountId: insertedData.id };
     } catch (error) {
