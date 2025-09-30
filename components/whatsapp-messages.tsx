@@ -7,13 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 interface WhatsAppMessage {
   id: number;
   whatsapp_account_id: number;
-  user_id: string;
   whatsapp_message_id: string;
   direction: "inbound" | "outbound";
   from_phone_number: string;
   to_phone_number: string;
   message_type: string;
-  //eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   message_content: any;
   message_status: string;
   timestamp_sent: string | null;
@@ -36,6 +35,7 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
       setLoading(true);
       setError(null);
 
+      // Get current user
       const {
         data: { user },
         error: userError,
@@ -46,9 +46,14 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
         return;
       }
 
+      // Call the database function to get user's messages
       const { data, error: messagesError } = await supabase.rpc(
         "get_user_whatsapp_messages",
-        { user_id_param: user.id, limit_param: 50, offset_param: 0 }
+        {
+          user_id_param: user.id,
+          limit_param: 50,
+          offset_param: 0,
+        }
       );
 
       if (messagesError) {
@@ -58,8 +63,8 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
       }
 
       setMessages(data || []);
-    } catch (err) {
-      console.error("Error fetching messages:", err);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
       setError("Failed to load messages");
     } finally {
       setLoading(false);
@@ -69,6 +74,7 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
   useEffect(() => {
     fetchMessages();
 
+    // Set up real-time subscription for new messages
     const setupRealtimeSubscription = async () => {
       const {
         data: { user },
@@ -85,11 +91,9 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
             table: "whatsapp_messages",
           },
           (payload) => {
+            console.log("Real-time message received:", payload);
             const newMessage = payload.new as WhatsAppMessage;
-
-            // RLS already ensures only this user's messages arrive
             setMessages((prev) => [newMessage, ...prev]);
-            console.log("Realtime message received:", newMessage);
           }
         )
         .on(
@@ -100,6 +104,7 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
             table: "whatsapp_messages",
           },
           (payload) => {
+            console.log("Message status updated:", payload);
             const updatedMessage = payload.new as WhatsAppMessage;
 
             setMessages((prev) =>
@@ -109,49 +114,62 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
             );
           }
         )
-        .subscribe((status) =>
-          console.log("Realtime subscription status:", status)
-        );
+        .subscribe((status) => {
+          console.log("Real-time subscription status:", status);
+        });
 
       return channel;
     };
 
-    let cleanup: (() => void) | undefined;
+    let cleanupFunction: (() => void) | undefined;
 
     setupRealtimeSubscription().then((channel) => {
       if (channel) {
-        cleanup = () => supabase.removeChannel(channel);
+        cleanupFunction = () => {
+          supabase.removeChannel(channel);
+        };
       }
     });
 
     return () => {
-      if (cleanup) cleanup();
+      if (cleanupFunction) {
+        cleanupFunction();
+      }
     };
   }, [supabase, fetchMessages]);
 
-  const formatPhoneNumber = (phoneNumber: string) =>
-    phoneNumber.length > 10 ? `+${phoneNumber}` : phoneNumber;
+  const formatPhoneNumber = (phoneNumber: string): string => {
+    if (phoneNumber.length > 10) {
+      return `+${phoneNumber}`;
+    }
+    return phoneNumber;
+  };
 
-  const formatTimestamp = (timestamp: string | null) => {
+  const formatTimestamp = (timestamp: string | null): string => {
     if (!timestamp) return "Unknown time";
+
     const date = new Date(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffDays === 0)
+    if (diffDays === 0) {
       return date.toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
       });
-    else if (diffDays === 1) return "Yesterday";
-    else if (diffDays < 7)
+    } else if (diffDays === 1) {
+      return "Yesterday";
+    } else if (diffDays < 7) {
       return date.toLocaleDateString([], { weekday: "short" });
-    else return date.toLocaleDateString([], { month: "short", day: "numeric" });
+    } else {
+      return date.toLocaleDateString([], { month: "short", day: "numeric" });
+    }
   };
 
-  const renderMessageContent = (message: WhatsAppMessage) => {
+  const renderMessageContent = (message: WhatsAppMessage): string => {
     const content = message.message_content;
+
     switch (message.message_type) {
       case "text":
         return content.text || "";
@@ -172,10 +190,11 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
     }
   };
 
-  const getMessageIcon = (direction: "inbound" | "outbound") =>
-    direction === "inbound" ? "⬅️" : "➡️";
+  const getMessageIcon = (direction: "inbound" | "outbound"): string => {
+    return direction === "inbound" ? "⬅️" : "➡️";
+  };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string): string => {
     switch (status) {
       case "sent":
         return "text-blue-600";
@@ -190,7 +209,7 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
     }
   };
 
-  if (loading)
+  if (loading) {
     return (
       <Card className={className}>
         <CardHeader>
@@ -204,8 +223,9 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
         </CardContent>
       </Card>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
       <Card className={className}>
         <CardHeader>
@@ -224,6 +244,7 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
         </CardContent>
       </Card>
     );
+  }
 
   return (
     <Card className={className}>
@@ -235,6 +256,14 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
             <span className="text-xs text-gray-500">Updating live</span>
           </div>
         </div>
+        {error && (
+          <button
+            onClick={fetchMessages}
+            className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          >
+            🔄 Retry
+          </button>
+        )}
       </CardHeader>
       <CardContent>
         {messages.length === 0 ? (

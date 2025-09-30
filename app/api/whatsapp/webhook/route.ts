@@ -246,7 +246,6 @@ async function processInboundMessage(
             .from("whatsapp_messages")
             .insert({
                 whatsapp_account_id: whatsappAccount.id,
-                user_id: whatsappAccount.user_id,
                 whatsapp_message_id: message.id,
                 direction: "inbound",
                 from_phone_number: message.from,
