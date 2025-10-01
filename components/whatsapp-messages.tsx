@@ -73,7 +73,18 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) return;
+
+      if (!user) {
+        console.error("Realtime setup failed: User not authenticated");
+        return;
+      }
+
+      // Get session and access token
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      // Set auth before subscribing to ensure RLS policies work correctly
+      await supabase.realtime.setAuth(accessToken ?? null);
 
       const channel = supabase
         .channel("whatsapp_messages_channel")
@@ -83,13 +94,11 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
             event: "INSERT",
             schema: "public",
             table: "whatsapp_messages",
+            filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
             const newMessage = payload.new as WhatsAppMessage;
-
-            // RLS already ensures only this user's messages arrive
             setMessages((prev) => [newMessage, ...prev]);
-            console.log("Realtime message received:", newMessage);
           }
         )
         .on(
@@ -98,10 +107,10 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
             event: "UPDATE",
             schema: "public",
             table: "whatsapp_messages",
+            filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
             const updatedMessage = payload.new as WhatsAppMessage;
-
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.id === updatedMessage.id ? updatedMessage : msg
@@ -109,9 +118,16 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
             );
           }
         )
-        .subscribe((status) =>
-          console.log("Realtime subscription status:", status)
-        );
+        .subscribe((status, err) => {
+          if (err) {
+            console.error("Realtime subscription error:", err);
+          }
+          if (status === "CHANNEL_ERROR") {
+            console.error(
+              "Realtime channel error - check RLS policies and table configuration"
+            );
+          }
+        });
 
       return channel;
     };
