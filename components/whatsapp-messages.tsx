@@ -69,25 +69,27 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
   useEffect(() => {
     fetchMessages();
 
-    const setupRealtimeSubscription = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
-      if (!user) {
-        console.error("Realtime setup failed: User not authenticated");
+    const setupRealtimeSubscription = async () => {
+      // Wait for auth to be fully ready
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session?.user) {
+        console.error("Realtime setup failed: No session available");
         return;
       }
 
-      // Get session and access token
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
+      const user = session.user;
+      const accessToken = session.access_token;
 
-      // Set auth before subscribing to ensure RLS policies work correctly
-      await supabase.realtime.setAuth(accessToken ?? null);
+      // Create channel first
+      channel = supabase.channel("whatsapp_messages_channel");
 
-      const channel = supabase
-        .channel("whatsapp_messages_channel")
+      // Configure listeners
+      channel
         .on(
           "postgres_changes",
           {
@@ -117,31 +119,36 @@ export function WhatsAppMessages({ className }: WhatsAppMessagesProps) {
               )
             );
           }
-        )
-        .subscribe((status, err) => {
-          if (err) {
-            console.error("Realtime subscription error:", err);
-          }
-          if (status === "CHANNEL_ERROR") {
-            console.error(
-              "Realtime channel error - check RLS policies and table configuration"
-            );
-          }
-        });
+        );
 
-      return channel;
+      // Set auth on the realtime client BEFORE subscribing
+      if (accessToken) {
+        await supabase.realtime.setAuth(accessToken);
+      }
+
+      // Now subscribe with auth already set
+      channel.subscribe((status, err) => {
+        if (err) {
+          console.error("Realtime subscription error:", err);
+        }
+        if (status === "CHANNEL_ERROR") {
+          console.error(
+            "Realtime channel error - check RLS policies and table configuration"
+          );
+        }
+      });
     };
 
-    let cleanup: (() => void) | undefined;
-
-    setupRealtimeSubscription().then((channel) => {
-      if (channel) {
-        cleanup = () => supabase.removeChannel(channel);
-      }
-    });
+    // Small delay to ensure auth is fully initialized after login
+    const timer = setTimeout(() => {
+      setupRealtimeSubscription();
+    }, 100);
 
     return () => {
-      if (cleanup) cleanup();
+      clearTimeout(timer);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
   }, [supabase, fetchMessages]);
 
